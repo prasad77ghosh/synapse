@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -25,4 +25,6 @@ model User {
   gender      Gender
   dateOfBirth DateTime? @map("date_of_birth") @db.Date
   avatar      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

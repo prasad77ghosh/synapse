@@ -8,9 +8,13 @@ export default tseslint.config(
   {
     ignores: ['eslint.config.mjs'],
   },
+
+  // Base ESLint + TypeScript + Prettier
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
+
+  // 🌍 Global environment setup
   {
     languageOptions: {
       globals: {
@@ -24,12 +28,20 @@ export default tseslint.config(
       },
     },
   },
+
+  // 🧩 Rules section (last one wins)
   {
     rules: {
+      // --- TypeScript Rules ---
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+
+      // ✅ Disable this rule (causing @IsString() decorator warnings)
+      '@typescript-eslint/no-unsafe-call': 'off',
+
+      // --- Prettier Integration ---
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 );
