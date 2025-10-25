@@ -3,7 +3,7 @@ _transform: true
 
 services:
   - name: auth-service
-    url:  http://192.168.29.238:3000
+    url:  http://192.168.29.238:3001
     routes:
       - name: auth-route
         paths:

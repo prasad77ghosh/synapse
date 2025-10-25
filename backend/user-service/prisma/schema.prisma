@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE              @map("male")
+  FEMALE            @map("female")
+  OTHER             @map("other")
+  PREFER_NOT_TO_SAY @map("prefer_not_to_say")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  password    String
+  phone       String?
+  isVerified  Boolean   @default(false) @map("is_verified")
+  gender      Gender
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  avatar      String?
+}
