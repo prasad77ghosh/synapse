@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -22,7 +21,7 @@ model User {
   password    String
   phone       String?
   isVerified  Boolean   @default(false) @map("is_verified")
-  gender      Gender
+  gender      Gender?
   dateOfBirth DateTime? @map("date_of_birth") @db.Date
   avatar      String?
   createdAt   DateTime  @default(now())
