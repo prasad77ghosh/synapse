@@ -3,7 +3,7 @@ import { RegisterDto } from './dto/register.dto';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom, Observable } from 'rxjs';
 import { CreateUserRequest } from 'src/proto/user.pb';
-import * as bcrypt from 'bcrypt';
+import { hashPassword } from 'src/utils/hash.utils';
 
 interface UsersService {
   CreateUser(data: CreateUserRequest): Observable<{
@@ -24,11 +24,8 @@ export class AuthService {
     this.usersService = this.client.getService<UsersService>('UserService');
   }
   async register(registerDto: RegisterDto) {
-    //hash password
-    const hashedPassword = await bcrypt.hash(
-      registerDto.password,
-      this.saltRounds,
-    );
+    //hash password logic
+    const hashedPassword = await hashPassword(registerDto.password);
     const userData = {
       name: registerDto?.name,
       email: registerDto?.email,

@@ -68,7 +68,7 @@ services:
       - "8000:8000"
       - "8001:8001"
     volumes:
-      - ./api-gateway/config/kong.yml:/kong/declarative/kong.yml:ro
+      - ./services/api-gateway/config/kong.yml:/kong/declarative/kong.yml:ro
     networks:
       - synapse-network
     extra_hosts:
