@@ -1,8 +1,11 @@
-version: '3.9'
+version: "3.9"
 
 services:
+  # ==========================================
+  # DATABASES
+  # ==========================================
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: postgres
     environment:
       POSTGRES_USER: app_user
@@ -15,7 +18,7 @@ services:
     networks:
       - synapse-network
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "app_user"]
+      test: ["CMD-SHELL", "pg_isready -U app_user"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,7 +37,7 @@ services:
     networks:
       - synapse-network
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"]
+      test: ["CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,6 +45,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
@@ -54,21 +58,23 @@ services:
       timeout: 5s
       retries: 5
 
+  # ==========================================
+  # API GATEWAY
+  # ==========================================
   kong:
     image: kong:3.6
     container_name: kong
     environment:
-      KONG_DATABASE: "off" # DB-less mode
+      KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      # Include all plugins used in kong.yml
       KONG_PLUGINS: bundled,jwt,rate-limiting,cors,request-transformer,response-transformer
     ports:
       - "8000:8000"
       - "8001:8001"
     volumes:
-      - ./services/api-gateway/config/kong.yml:/kong/declarative/kong.yml:ro
+      - ./api-gateway/config/kong.yml:/kong/declarative/kong.yml:ro
     networks:
       - synapse-network
     extra_hosts:
@@ -81,6 +87,143 @@ services:
       timeout: 5s
       retries: 5
 
+  # ==========================================
+  # KAFKA MESSAGE BROKER
+  # ==========================================
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - synapse-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok > /dev/tcp/localhost/2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"    # External access
+      - "29092:29092"  # Internal access
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_COMPRESSION_TYPE: lz4
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - synapse-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  kafka-setup:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-setup
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - synapse-network
+    command: >
+      bash -c "
+        echo '⏳ Waiting for Kafka to be ready...'
+        cub kafka-ready -b kafka:9092 1 30
+
+        echo '📋 Creating Kafka topics...'
+
+        # User Events
+        kafka-topics --create --if-not-exists \
+          --bootstrap-server kafka:9092 \
+          --topic user.registered \
+          --partitions 3 \
+          --replication-factor 1 \
+          --config retention.ms=604800000 \
+          --config compression.type=lz4
+
+        kafka-topics --create --if-not-exists \
+          --bootstrap-server kafka:9092 \
+          --topic user.email.verified \
+          --partitions 3 \
+          --replication-factor 1 \
+          --config retention.ms=604800000
+
+        # Notification Events
+        kafka-topics --create --if-not-exists \
+          --bootstrap-server kafka:9092 \
+          --topic notification.email.send \
+          --partitions 5 \
+          --replication-factor 1 \
+          --config retention.ms=259200000
+
+        kafka-topics --create --if-not-exists \
+          --bootstrap-server kafka:9092 \
+          --topic notification.sms.send \
+          --partitions 3 \
+          --replication-factor 1 \
+          --config retention.ms=259200000
+
+        echo '✅ All topics created successfully!'
+        echo ''
+        echo '📋 Listing all topics:'
+        kafka-topics --list --bootstrap-server kafka:9092
+
+        echo ''
+        echo '📊 Topic details:'
+        kafka-topics --describe --bootstrap-server kafka:9092
+      "
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: synapse-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      DYNAMIC_CONFIG_ENABLED: "true"
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+    networks:
+      - synapse-network
+
 networks:
   synapse-network:
     driver: bridge
@@ -89,3 +232,6 @@ volumes:
   postgres-data:
   mongodb-data:
   redis-data:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:

@@ -1,0 +1,15 @@
+{
+  "name": "@chat-app/kafka-contracts",
+  "version": "1.0.0",
+  "description": "Shared Kafka topic definitions and event contracts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

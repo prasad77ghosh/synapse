@@ -19,7 +19,7 @@ export interface CreateUserRequest {
 }
 
 export interface CreateUserResponse {
-  id: number;
+  id: string;
   name: string;
   email: string;
 }
@@ -86,13 +86,13 @@ export const CreateUserRequest: MessageFns<CreateUserRequest> = {
 };
 
 function createBaseCreateUserResponse(): CreateUserResponse {
-  return { id: 0, name: "", email: "" };
+  return { id: "", name: "", email: "" };
 }
 
 export const CreateUserResponse: MessageFns<CreateUserResponse> = {
   encode(message: CreateUserResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0) {
-      writer.uint32(8).int32(message.id);
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
     }
     if (message.name !== "") {
       writer.uint32(18).string(message.name);
@@ -111,11 +111,11 @@ export const CreateUserResponse: MessageFns<CreateUserResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
             break;
           }
 
-          message.id = reader.int32();
+          message.id = reader.string();
           continue;
         }
         case 2: {

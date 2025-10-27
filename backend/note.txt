@@ -1,1 +1,11 @@
-command to generate proto type --> protoc   --plugin=./node_modules/.bin/protoc-gen-ts_proto   --ts_proto_out=./src/proto   --proto_path=../proto   --ts_proto_opt=nestJs=true,esModuleInterop=true,outputServices=grpc-js,fileSuffix=.pb   ../proto/*.proto
+
+// command to generate proto type file
+protoc \
+  --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+  --ts_proto_out=./src/proto \
+  --proto_path=../../proto \
+  --ts_proto_opt=nestJs=true,esModuleInterop=true,outputServices=grpc-js,fileSuffix=.pb \
+  ../../proto/*.proto
+
+// command to start dev docker compose
+docker compose -f docker-compose.dev.yml up -d
