@@ -37,7 +37,11 @@ services:
     networks:
       - synapse-network
     healthcheck:
-      test: ["CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"]
+      test:
+        [
+          "CMD-SHELL",
+          'echo ''db.runCommand("ping").ok'' | mongosh localhost:27017/test --quiet',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -121,8 +125,8 @@ services:
       zookeeper:
         condition: service_healthy
     ports:
-      - "9092:9092"    # External access
-      - "29092:29092"  # Internal access
+      - "9092:9092" # Internal access
+      - "29092:29092" # External access
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -137,14 +141,20 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_LOG_SEGMENT_BYTES: 1073741824
-      KAFKA_COMPRESSION_TYPE: lz4
+      KAFKA_COMPRESSION_TYPE: gzip
       KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
     volumes:
       - kafka-data:/var/lib/kafka/data
     networks:
       - synapse-network
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:9092",
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -160,50 +170,26 @@ services:
       - synapse-network
     command: >
       bash -c "
-        echo '⏳ Waiting for Kafka to be ready...'
-        cub kafka-ready -b kafka:9092 1 30
+        echo '⏳ Waiting for Kafka to be ready...';
+        for i in {1..30}; do
+          kafka-topics --bootstrap-server kafka:9092 --list > /dev/null 2>&1 && break;
+          echo '⏳ Waiting ($i/30)...';
+          sleep 3;
+        done;
 
-        echo '📋 Creating Kafka topics...'
+        echo '📋 Creating Kafka topics...';
 
         # User Events
-        kafka-topics --create --if-not-exists \
-          --bootstrap-server kafka:9092 \
-          --topic user.registered \
-          --partitions 3 \
-          --replication-factor 1 \
-          --config retention.ms=604800000 \
-          --config compression.type=lz4
-
-        kafka-topics --create --if-not-exists \
-          --bootstrap-server kafka:9092 \
-          --topic user.email.verified \
-          --partitions 3 \
-          --replication-factor 1 \
-          --config retention.ms=604800000
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic user.registered --partitions 3 --replication-factor 1 --config retention.ms=604800000 --config compression.type=gzip || true;
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic user.email.verified --partitions 3 --replication-factor 1 --config retention.ms=604800000 || true;
 
         # Notification Events
-        kafka-topics --create --if-not-exists \
-          --bootstrap-server kafka:9092 \
-          --topic notification.email.send \
-          --partitions 5 \
-          --replication-factor 1 \
-          --config retention.ms=259200000
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic notification.email.send --partitions 5 --replication-factor 1 --config retention.ms=259200000 || true;
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic notification.sms.send --partitions 3 --replication-factor 1 --config retention.ms=259200000 || true;
 
-        kafka-topics --create --if-not-exists \
-          --bootstrap-server kafka:9092 \
-          --topic notification.sms.send \
-          --partitions 3 \
-          --replication-factor 1 \
-          --config retention.ms=259200000
-
-        echo '✅ All topics created successfully!'
-        echo ''
-        echo '📋 Listing all topics:'
-        kafka-topics --list --bootstrap-server kafka:9092
-
-        echo ''
-        echo '📊 Topic details:'
-        kafka-topics --describe --bootstrap-server kafka:9092
+        echo '✅ All topics created successfully!';
+        echo '';
+        kafka-topics --list --bootstrap-server kafka:9092;
       "
 
   kafka-ui:

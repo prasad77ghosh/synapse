@@ -1,14 +1,13 @@
 {
-  "name": "@chat-app/kafka-contracts",
+  "name": "@synapse/shared",
   "version": "1.0.0",
-  "description": "Shared Kafka topic definitions and event contracts",
+  "description": "Shared code for Synapse microservices (Kafka, Proto, etc.)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "watch": "tsc --watch"
   },
-  "dependencies": {},
   "devDependencies": {
     "typescript": "^5.3.3"
   }

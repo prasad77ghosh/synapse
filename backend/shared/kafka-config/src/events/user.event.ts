@@ -1,17 +1,7 @@
 export interface UserRegisteredEvent {
-  userId: string;
+  id:string;
+  name: string;
   email: string;
-  phone?: string;
-  username: string;
-  fullName: string;
-  registeredAt: string;
-
-  emailVerificationToken: string;
-  phoneVerificationToken?: string;
-
-  registrationSource: "web" | "mobile" | "api";
-  ipAddress?: string;
-  deviceInfo?: string;
 }
 
 export interface UserEmailVerifiedEvent {
