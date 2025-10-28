@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 export async function hashPassword(
   password: string,
@@ -12,4 +13,9 @@ export async function comparePassword(
   hashedPassword: string,
 ): Promise<boolean> {
   return bcrypt.compare(password, hashedPassword);
+}
+
+export function generateVerificationToken(): string {
+  const token = crypto.randomBytes(16).toString('hex');
+  return token;
 }

@@ -12,10 +12,18 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "user";
 
+export enum RegisterType {
+  MAIL = 0,
+  PHONE = 1,
+  UNRECOGNIZED = -1,
+}
+
 export interface CreateUserRequest {
   name: string;
-  email: string;
+  email?: string | undefined;
+  phone?: string | undefined;
   password: string;
+  registerType: RegisterType;
 }
 
 export interface CreateUserResponse {
@@ -24,10 +32,21 @@ export interface CreateUserResponse {
   email: string;
 }
 
+export interface UserExistanceRequest {
+  email: string;
+}
+
+export interface UserExistanceStatus {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+}
+
 export const USER_PACKAGE_NAME = "user";
 
 function createBaseCreateUserRequest(): CreateUserRequest {
-  return { name: "", email: "", password: "" };
+  return { name: "", password: "", registerType: 0 };
 }
 
 export const CreateUserRequest: MessageFns<CreateUserRequest> = {
@@ -35,11 +54,17 @@ export const CreateUserRequest: MessageFns<CreateUserRequest> = {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
     }
-    if (message.email !== "") {
+    if (message.email !== undefined) {
       writer.uint32(18).string(message.email);
     }
+    if (message.phone !== undefined) {
+      writer.uint32(26).string(message.phone);
+    }
     if (message.password !== "") {
-      writer.uint32(26).string(message.password);
+      writer.uint32(34).string(message.password);
+    }
+    if (message.registerType !== 0) {
+      writer.uint32(40).int32(message.registerType);
     }
     return writer;
   },
@@ -72,7 +97,23 @@ export const CreateUserRequest: MessageFns<CreateUserRequest> = {
             break;
           }
 
+          message.phone = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
           message.password = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.registerType = reader.int32() as any;
           continue;
         }
       }
@@ -132,6 +173,113 @@ export const CreateUserResponse: MessageFns<CreateUserResponse> = {
           }
 
           message.email = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseUserExistanceRequest(): UserExistanceRequest {
+  return { email: "" };
+}
+
+export const UserExistanceRequest: MessageFns<UserExistanceRequest> = {
+  encode(message: UserExistanceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserExistanceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserExistanceRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseUserExistanceStatus(): UserExistanceStatus {
+  return { id: "", name: "", email: "", password: "" };
+}
+
+export const UserExistanceStatus: MessageFns<UserExistanceStatus> = {
+  encode(message: UserExistanceStatus, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.name !== "") {
+      writer.uint32(18).string(message.name);
+    }
+    if (message.email !== "") {
+      writer.uint32(26).string(message.email);
+    }
+    if (message.password !== "") {
+      writer.uint32(34).string(message.password);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserExistanceStatus {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserExistanceStatus();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.password = reader.string();
           continue;
         }
       }

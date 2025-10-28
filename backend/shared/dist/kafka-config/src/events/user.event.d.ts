@@ -2,6 +2,7 @@ export interface UserRegisteredEvent {
     id: string;
     name: string;
     email: string;
+    token: string;
 }
 export interface UserEmailVerifiedEvent {
     userId: string;

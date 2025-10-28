@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CompressionTypes, Kafka, KafkaConfig, Producer } from 'kafkajs';
+import { Kafka, KafkaConfig, Producer, RecordMetadata } from 'kafkajs';
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
@@ -15,53 +15,63 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
   constructor(private readonly configService: ConfigService) {
     const kafkaConfig: KafkaConfig = {
-      clientId: 'auth-service',
-      brokers: ['localhost:29092'],
+      clientId: this.configService.get<string>(
+        'KAFKA_CLIENT_ID',
+        'auth-service',
+      ),
+      brokers: this.configService.get<string[]>('KAFKA_BROKERS', [
+        'localhost:29092',
+      ]),
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.kafka = new Kafka(kafkaConfig);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     this.producer = this.kafka.producer({
       allowAutoTopicCreation: false,
       idempotent: true,
     });
   }
 
-  async onModuleInit() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    await this.producer.connect();
-    this.logger.log('Kafka Producer connected');
-  }
-
-  async onModuleDestroy() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    await this.producer.disconnect();
-    this.logger.log('Kafka Producer disconnected');
-  }
-
-  async publish(topic: string, event: any, key?: string) {
+  async onModuleInit(): Promise<void> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const result = await this.producer.send({
-        topic,
-        messages: [
-          {
-            key: key || null,
-            value: JSON.stringify(event),
-            timestamp: Date.now().toString(),
-          },
-        ],
-        compression: CompressionTypes.GZIP,
-      });
+      await this.producer.connect();
+      this.logger.log('Kafka Producer connected');
+    } catch (error) {
+      this.logger.error('Failed to connect Kafka Producer', error);
+      throw error;
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    try {
+      await this.producer.disconnect();
+      this.logger.log('Kafka Producer disconnected');
+    } catch (error) {
+      this.logger.error('Failed to disconnect Kafka Producer', error);
+    }
+  }
+
+  async publish(
+    topic: string,
+    event: unknown,
+    key?: string,
+  ): Promise<RecordMetadata[]> {
+    try {
+      const messages = [
+        {
+          key: key ?? null,
+          value: JSON.stringify(event),
+          timestamp: Date.now().toString(),
+        },
+      ];
+
+      const result = await this.producer.send({ topic, messages });
 
       this.logger.debug(`📤 Event published to ${topic}`, {
         topic,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        partition: result[0].partition,
+        partition: result[0]?.partition,
+        offset: result[0]?.offset,
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return result;
     } catch (error) {
       this.logger.error(`❌ Failed to publish to ${topic}`, error);

@@ -6,10 +6,20 @@ service UserService {
   rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
 }
 
+
+enum RegisterType {
+  MAIL = 0;
+  PHONE = 1;
+}
+
 message CreateUserRequest {
   string name = 1;
-  string email = 2;
-  string password = 3;
+  oneof contact {
+    string email = 2;
+    string phone = 3;
+  }
+  string password = 4;
+  RegisterType registerType = 5;
 }
 
 message CreateUserResponse {
@@ -17,3 +27,16 @@ message CreateUserResponse {
   string name = 2;
   string email = 3;
 }
+
+
+message UserExistanceRequest {
+  string email = 1;
+}
+
+message UserExistanceStatus {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string password = 4;
+}
+

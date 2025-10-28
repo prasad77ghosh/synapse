@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { CreateUserDto } from 'src/dto/user.dto';
-import { CreateUserResponse } from 'src/proto/user.pb';
+import { CreateUserDto, GetUserByMailDto } from 'src/dto/user.dto';
+import { CreateUserResponse, UserExistanceStatus } from 'src/proto/user.pb';
 import { handlePrismaError } from 'src/utils/prisma-error.util';
 
 @Injectable()
@@ -28,6 +28,27 @@ export class UsersService {
         name: user.name,
         email: user.email,
       };
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  }
+
+  async getUserByMail(
+    data: GetUserByMailDto,
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  ): Promise<UserExistanceStatus | null> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: data.email },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          password: true,
+        },
+      });
+
+      return user; // ✅ now valid, since return type allows null
     } catch (error) {
       handlePrismaError(error);
     }

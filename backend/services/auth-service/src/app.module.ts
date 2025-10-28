@@ -8,6 +8,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { KafkaService } from './kafka/kafka.service';
 import { KafkaModule } from './kafka/kafka.module';
+import { RedisService } from './redis/redis.service';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { KafkaModule } from './kafka/kafka.module';
       },
     ]),
     KafkaModule,
+    RedisModule,
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService, AuthService, KafkaService],
+  providers: [AppService, AuthService, KafkaService, RedisService],
 })
 export class AppModule {}

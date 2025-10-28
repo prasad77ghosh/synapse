@@ -1,7 +1,8 @@
 export interface UserRegisteredEvent {
-  id:string;
+  id: string;
   name: string;
   email: string;
+  token: string;
 }
 
 export interface UserEmailVerifiedEvent {

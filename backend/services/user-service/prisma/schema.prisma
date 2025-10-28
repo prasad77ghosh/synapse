@@ -14,16 +14,23 @@ enum Gender {
   PREFER_NOT_TO_SAY @map("prefer_not_to_say")
 }
 
+enum RegisterType {
+  MAIL   @map("mail")
+  PHONE  @map("phone")
+  SOCIAL @map("social")
+}
+
 model User {
-  id          String    @id @default(uuid())
-  name        String
-  email       String    @unique
-  password    String
-  phone       String?
-  isVerified  Boolean   @default(false) @map("is_verified")
-  gender      Gender?
-  dateOfBirth DateTime? @map("date_of_birth") @db.Date
-  avatar      String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  password     String
+  phone        String?      @unique
+  registerType RegisterType @default(MAIL)
+  isVerified   Boolean      @default(false) @map("is_verified")
+  gender       Gender?
+  dateOfBirth  DateTime?    @map("date_of_birth") @db.Date
+  avatar       String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
