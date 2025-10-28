@@ -4,6 +4,8 @@ package user;
 
 service UserService {
   rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+  rpc VerifyUser (EmailVerifyRequest) returns (UserExistanceStatus);
+  rpc GetUserByMail(UserExistanceRequest) returns (UserExistanceStatus);
 }
 
 
@@ -38,5 +40,13 @@ message UserExistanceStatus {
   string name = 2;
   string email = 3;
   string password = 4;
+  bool isVerified = 5;
 }
+
+message EmailVerifyRequest {
+  string email = 1;
+  bool isVerified = 2;
+}
+
+
 

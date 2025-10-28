@@ -10,6 +10,7 @@ import { KafkaService } from './kafka/kafka.service';
 import { KafkaModule } from './kafka/kafka.module';
 import { RedisService } from './redis/redis.service';
 import { RedisModule } from './redis/redis.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -25,6 +26,10 @@ import { RedisModule } from './redis/redis.module';
         },
       },
     ]),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'supersecret',
+      signOptions: { expiresIn: '15m' },
+    }),
     KafkaModule,
     RedisModule,
   ],

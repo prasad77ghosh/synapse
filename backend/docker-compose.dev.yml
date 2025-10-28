@@ -61,6 +61,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    networks:
+      - synapse-network
+    depends_on:
+      - redis
+    restart: unless-stopped
 
   # ==========================================
   # API GATEWAY

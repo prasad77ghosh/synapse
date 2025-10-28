@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { CreateUserDto, GetUserByMailDto } from 'src/dto/user.dto';
+import { CreateUserDto, GetUserByMailDto, VerifyDto } from 'src/dto/user.dto';
 import { CreateUserResponse, UserExistanceStatus } from 'src/proto/user.pb';
 import { handlePrismaError } from 'src/utils/prisma-error.util';
 
@@ -39,16 +39,44 @@ export class UsersService {
   ): Promise<UserExistanceStatus | null> {
     try {
       const user = await this.prisma.user.findUnique({
-        where: { email: data.email },
+        where: {
+          email: data.email,
+        },
         select: {
           id: true,
           name: true,
           email: true,
           password: true,
+          isVerified: true,
         },
       });
 
       return user; // ✅ now valid, since return type allows null
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  }
+
+  async verify(data: VerifyDto): Promise<UserExistanceStatus | null> {
+    try {
+      const { isVerified, email } = data;
+      console.log('DATA-->', data);
+      const user = await this.prisma.user.update({
+        where: {
+          email: email,
+        },
+        data: {
+          isVerified: isVerified,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          password: true,
+          isVerified: true,
+        },
+      });
+      return user;
     } catch (error) {
       handlePrismaError(error);
     }

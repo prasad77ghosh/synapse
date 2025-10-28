@@ -41,6 +41,12 @@ export interface UserExistanceStatus {
   name: string;
   email: string;
   password: string;
+  isVerified: boolean;
+}
+
+export interface EmailVerifyRequest {
+  email: string;
+  isVerified: boolean;
 }
 
 export const USER_PACKAGE_NAME = "user";
@@ -223,7 +229,7 @@ export const UserExistanceRequest: MessageFns<UserExistanceRequest> = {
 };
 
 function createBaseUserExistanceStatus(): UserExistanceStatus {
-  return { id: "", name: "", email: "", password: "" };
+  return { id: "", name: "", email: "", password: "", isVerified: false };
 }
 
 export const UserExistanceStatus: MessageFns<UserExistanceStatus> = {
@@ -239,6 +245,9 @@ export const UserExistanceStatus: MessageFns<UserExistanceStatus> = {
     }
     if (message.password !== "") {
       writer.uint32(34).string(message.password);
+    }
+    if (message.isVerified !== false) {
+      writer.uint32(40).bool(message.isVerified);
     }
     return writer;
   },
@@ -282,6 +291,62 @@ export const UserExistanceStatus: MessageFns<UserExistanceStatus> = {
           message.password = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.isVerified = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseEmailVerifyRequest(): EmailVerifyRequest {
+  return { email: "", isVerified: false };
+}
+
+export const EmailVerifyRequest: MessageFns<EmailVerifyRequest> = {
+  encode(message: EmailVerifyRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    if (message.isVerified !== false) {
+      writer.uint32(16).bool(message.isVerified);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EmailVerifyRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEmailVerifyRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.isVerified = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -294,17 +359,29 @@ export const UserExistanceStatus: MessageFns<UserExistanceStatus> = {
 
 export interface UserServiceClient {
   createUser(request: CreateUserRequest): Observable<CreateUserResponse>;
+
+  verifyUser(request: EmailVerifyRequest): Observable<UserExistanceStatus>;
+
+  getUserByMail(request: UserExistanceRequest): Observable<UserExistanceStatus>;
 }
 
 export interface UserServiceController {
   createUser(
     request: CreateUserRequest,
   ): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
+
+  verifyUser(
+    request: EmailVerifyRequest,
+  ): Promise<UserExistanceStatus> | Observable<UserExistanceStatus> | UserExistanceStatus;
+
+  getUserByMail(
+    request: UserExistanceRequest,
+  ): Promise<UserExistanceStatus> | Observable<UserExistanceStatus> | UserExistanceStatus;
 }
 
 export function UserServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createUser"];
+    const grpcMethods: string[] = ["createUser", "verifyUser", "getUserByMail"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("UserService", method)(constructor.prototype[method], method, descriptor);
@@ -330,10 +407,30 @@ export const UserServiceService = {
     responseSerialize: (value: CreateUserResponse): Buffer => Buffer.from(CreateUserResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): CreateUserResponse => CreateUserResponse.decode(value),
   },
+  verifyUser: {
+    path: "/user.UserService/VerifyUser",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: EmailVerifyRequest): Buffer => Buffer.from(EmailVerifyRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): EmailVerifyRequest => EmailVerifyRequest.decode(value),
+    responseSerialize: (value: UserExistanceStatus): Buffer => Buffer.from(UserExistanceStatus.encode(value).finish()),
+    responseDeserialize: (value: Buffer): UserExistanceStatus => UserExistanceStatus.decode(value),
+  },
+  getUserByMail: {
+    path: "/user.UserService/GetUserByMail",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: UserExistanceRequest): Buffer => Buffer.from(UserExistanceRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UserExistanceRequest => UserExistanceRequest.decode(value),
+    responseSerialize: (value: UserExistanceStatus): Buffer => Buffer.from(UserExistanceStatus.encode(value).finish()),
+    responseDeserialize: (value: Buffer): UserExistanceStatus => UserExistanceStatus.decode(value),
+  },
 } as const;
 
 export interface UserServiceServer extends UntypedServiceImplementation {
   createUser: handleUnaryCall<CreateUserRequest, CreateUserResponse>;
+  verifyUser: handleUnaryCall<EmailVerifyRequest, UserExistanceStatus>;
+  getUserByMail: handleUnaryCall<UserExistanceRequest, UserExistanceStatus>;
 }
 
 export interface MessageFns<T> {

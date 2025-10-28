@@ -9,8 +9,10 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom, Observable } from 'rxjs';
 import {
   CreateUserRequest,
+  EmailVerifyRequest,
   RegisterType as ProtoRegisterType,
   UserExistanceRequest,
+  UserExistanceStatus,
 } from 'src/proto/user.pb';
 import {
   comparePassword,
@@ -25,6 +27,9 @@ import {
 import { RedisService } from 'src/redis/redis.service';
 import { VerifyDto } from './dto/verify.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtService } from '@nestjs/jwt';
+import { TokenRotationDto } from './dto/token-rotation.dto';
+import { LogoutDto } from './dto/logout.dto';
 
 interface UsersService {
   CreateUser(data: CreateUserRequest): Observable<{
@@ -33,23 +38,23 @@ interface UsersService {
     email: string;
     password: string;
   }>;
-  GetUserByMail(data: UserExistanceRequest): Observable<{
-    id: string;
-    name: string;
-    email: string;
-    password: string;
-  }>;
+  GetUserByMail(data: UserExistanceRequest): Observable<UserExistanceStatus>;
+  VerifyUser(data: EmailVerifyRequest): Observable<UserExistanceStatus>;
 }
 
 @Injectable()
 export class AuthService {
   private usersService: UsersService;
   private readonly saltRounds = 10;
+  private readonly DEVICE_LIMIT = 3;
+  private readonly ACCESS_TOKEN_EXPIRY = '15m';
+  private readonly REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60;
 
   constructor(
     @Inject('USER_SERVICE') private readonly client: ClientGrpc,
     private kafkaProducer: KafkaService,
     private redisService: RedisService,
+    private readonly jwtService: JwtService,
   ) {}
 
   onModuleInit() {
@@ -68,9 +73,11 @@ export class AuthService {
           : ProtoRegisterType?.PHONE,
     };
     const user = await firstValueFrom(this.usersService.CreateUser(userData));
+
     const token = generateVerificationToken();
     //set verification token
     await this.redisService.set(`email_verif_${user.email}`, token, 600);
+
     const registerEvent: UserRegisteredEvent = {
       id: user.id,
       name: user.name,
@@ -78,11 +85,10 @@ export class AuthService {
       token: token,
     };
 
-    await this.kafkaProducer.publish(
-      KAFKA_TOPICS.USER_REGISTERED,
-      registerEvent,
-      user.id,
-    );
+    await this.sendRegisterEventToNotificationService({
+      data: registerEvent,
+      userId: user.id,
+    });
 
     return {
       message: 'User registered successfully',
@@ -91,12 +97,21 @@ export class AuthService {
   }
 
   async verify(verifyDto: VerifyDto): Promise<string> {
+    const { email } = verifyDto;
     const storedToken = await this.redisService.get(
       `email_verif_${verifyDto.email}`,
     );
     if (!storedToken || storedToken !== verifyDto.token) {
       throw new BadRequestException('Invalid or expired token');
     }
+
+    await firstValueFrom(
+      this.usersService.VerifyUser({
+        isVerified: true,
+        email: email,
+      }),
+    );
+
     return 'Email verified successfully';
   }
 
@@ -106,12 +121,175 @@ export class AuthService {
     };
     const user = await firstValueFrom(this.usersService.GetUserByMail(data));
 
+    if (!user.isVerified) {
+      // send
+      const token = generateVerificationToken();
+      const registerEvent: UserRegisteredEvent = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        token: token,
+      };
+
+      const userId = user.id;
+      await this.sendRegisterEventToNotificationService({
+        data: registerEvent,
+        userId,
+      });
+
+      return 'Check your mail for verification link you are not verified yet!!';
+    }
+
     if (!user) throw new UnauthorizedException('Invalid credentials');
-    
+
     const password = loginDto.password;
     const hashedPassword = user.password;
     const isPasswordMatch = await comparePassword(password, hashedPassword);
     if (!isPasswordMatch)
       throw new UnauthorizedException('Invalid credentials');
+
+    const deviceKey = this.getDeviceKey(user.id);
+
+    const allActiveDevices = await this.getAllActiveDevices(deviceKey);
+
+    await this.removeOldDevice({
+      allDevices: allActiveDevices,
+      currentDeviceId: loginDto.deviceId,
+      deviceKey: deviceKey,
+      userId: user.id,
+    });
+
+    await this.addDevice({
+      deviceId: loginDto.deviceId,
+      deviceKey: deviceKey,
+    });
+
+    // token logic
+    const deviceId = loginDto.deviceId;
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, email: user.email, deviceId },
+      { expiresIn: this.ACCESS_TOKEN_EXPIRY },
+    );
+
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, deviceId },
+      { expiresIn: `${this.REFRESH_TOKEN_EXPIRY}s` },
+    );
+
+    await this.storeRefreshToken({
+      deviceId: deviceId,
+      token: refreshToken,
+      userId: user.id,
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async tokenRotation(rotationDto: TokenRotationDto) {
+    const { deviceId, token, userId } = rotationDto;
+    const tokenKey = this.getRefreshTokenKey(userId, deviceId);
+    const storedToken = await this.redisService.get(tokenKey);
+    if (!storedToken || storedToken !== token) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const accessToken = this.jwtService.sign(
+      { sub: userId, deviceId },
+      { expiresIn: this.ACCESS_TOKEN_EXPIRY },
+    );
+
+    return { accessToken };
+  }
+
+  async logout(logoutDto: LogoutDto) {
+    const { deviceId, userId } = logoutDto;
+    const deviceKey = this.getDeviceKey(userId);
+    await this.redisService.zRem(deviceKey, deviceId);
+    await this.redisService.del(this.getRefreshTokenKey(userId, deviceId));
+    return 'Logout successfully...';
+  }
+
+  // helper functions
+  private async sendRegisterEventToNotificationService({
+    data,
+    userId,
+  }: {
+    data: UserRegisteredEvent;
+    userId: string;
+  }) {
+    await this.kafkaProducer.publish(
+      KAFKA_TOPICS.USER_REGISTERED,
+      data,
+      userId,
+    );
+  }
+
+  private getDeviceKey(userId: string) {
+    return `user_devices_${userId}`;
+  }
+
+  private getRefreshTokenKey(userId: string, deviceId: string) {
+    return `refresh_token_${userId}_${deviceId}`;
+  }
+
+  private async getAllActiveDevices(deviceKey: string) {
+    const allActiveDevices = await this.redisService
+      .getClient()
+      .zrangebyscore(deviceKey, 0, -1, 'WITHSCORES');
+
+    return allActiveDevices;
+  }
+
+  private async removeOldDevice({
+    allDevices,
+    currentDeviceId,
+    deviceKey,
+    userId,
+  }: {
+    allDevices: string[];
+    currentDeviceId: string;
+    deviceKey: string;
+    userId: string;
+  }) {
+    if (
+      allDevices.length >= this.DEVICE_LIMIT * 2 &&
+      !allDevices.some(
+        (_, i) => i % 2 === 0 && allDevices[i] === currentDeviceId,
+      )
+    ) {
+      const oldestDevice = allDevices[0];
+      await this.redisService.getClient().zrem(deviceKey, oldestDevice);
+      await this.redisService.del(
+        this.getRefreshTokenKey(userId, oldestDevice),
+      );
+    }
+  }
+
+  private async addDevice({
+    deviceId,
+    deviceKey,
+  }: {
+    deviceId: string;
+    deviceKey: string;
+  }) {
+    const now = Date.now();
+    await this.redisService.zAdd(deviceKey, now, deviceId);
+    await this.redisService.expire(deviceKey, this.REFRESH_TOKEN_EXPIRY);
+  }
+
+  private async storeRefreshToken({
+    token,
+    userId,
+    deviceId,
+  }: {
+    token: string;
+    userId: string;
+    deviceId: string;
+  }) {
+    const key = this.getRefreshTokenKey(userId, deviceId);
+    const value = token;
+    const exTime = this.REFRESH_TOKEN_EXPIRY;
+    const storedToken = await this.redisService.set(key, value, exTime);
+    return storedToken;
   }
 }

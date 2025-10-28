@@ -252,7 +252,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     min: number,
     max: number,
   ): Promise<string[]> {
-    return await this.client.zrangebyscore(key, min, max);
+    return await this.client.zrangebyscore(key, min, max, 'WITHSCORES');
   }
 
   /**

@@ -4,6 +4,7 @@ import {
   MinLength,
   MaxLength,
   IsNotEmpty,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -25,4 +26,14 @@ export class GetUserByMailDto {
   @IsEmail()
   @IsNotEmpty({ message: 'Email is required' })
   email: string;
+}
+
+export class VerifyDto {
+  @IsEmail()
+  @IsNotEmpty({ message: 'Email is required' })
+  email: string;
+
+  @IsBoolean()
+  @IsNotEmpty({ message: 'isVerified is required' })
+  isVerified: boolean;
 }
