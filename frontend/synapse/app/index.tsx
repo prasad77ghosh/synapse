@@ -1,11 +1,14 @@
-import { Text, View } from "react-native";
+import { Image } from "expo-image";
+import { View } from "react-native";
 
 export default function HomeScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-gray-100">
-      <Text className="text-2xl font-bold text-blue-600">
-        Welcome to the single page app 🚀
-      </Text>
+    <View className="flex-1 items-center justify-center bg-background">
+      <Image
+        source={require("../assets/app-assets/revenue-i1.png")}
+        className="resize-contain"
+        style={{ height: 310, width: 300 }}
+      />
     </View>
   );
 }
