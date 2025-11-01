@@ -22,9 +22,9 @@ services:
 
       - name: rate-limiting
         config:
-          minute: 100
+          minute: 10
           hour: 1000
-          policy: redis
+          policy: local
           redis:
             host: redis
             port: 6379

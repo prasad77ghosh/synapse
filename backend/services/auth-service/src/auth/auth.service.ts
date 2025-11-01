@@ -48,7 +48,7 @@ export class AuthService {
   private readonly saltRounds = 10;
   private readonly DEVICE_LIMIT = 3;
   private readonly ACCESS_TOKEN_EXPIRY = '15m';
-  private readonly REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60;
+  private readonly REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 6 days
 
   constructor(
     @Inject('USER_SERVICE') private readonly client: ClientGrpc,
@@ -235,7 +235,7 @@ export class AuthService {
   private async getAllActiveDevices(deviceKey: string) {
     const allActiveDevices = await this.redisService
       .getClient()
-      .zrangebyscore(deviceKey, 0, -1, 'WITHSCORES');
+      .zrangebyscore(deviceKey, '-inf', '+inf', 'WITHSCORES');
 
     return allActiveDevices;
   }
