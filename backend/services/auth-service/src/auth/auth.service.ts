@@ -30,6 +30,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { TokenRotationDto } from './dto/token-rotation.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { KongService } from 'src/kong/kong.service';
 
 interface UsersService {
   CreateUser(data: CreateUserRequest): Observable<{
@@ -55,12 +56,14 @@ export class AuthService {
     private kafkaProducer: KafkaService,
     private redisService: RedisService,
     private readonly jwtService: JwtService,
+    private kongService: KongService,
   ) {}
 
   onModuleInit() {
     this.usersService = this.client.getService<UsersService>('UserService');
   }
   async register(registerDto: RegisterDto) {
+    const { email } = registerDto;
     //hash password logic
     const hashedPassword = await hashPassword(registerDto.password);
     const userData = {
@@ -89,6 +92,8 @@ export class AuthService {
       data: registerEvent,
       userId: user.id,
     });
+
+    if (email) await this.kongService.registerFrontendClient(email);
 
     return {
       message: 'User registered successfully',

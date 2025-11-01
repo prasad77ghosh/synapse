@@ -12,3 +12,6 @@ docker compose -f docker-compose.dev.yml up -d
 
 // to create new migration
 npx prisma migrate dev --name <migration name>
+
+// relode conatiner
+docker exec -it kong kong reload

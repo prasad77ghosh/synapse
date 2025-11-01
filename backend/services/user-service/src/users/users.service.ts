@@ -60,7 +60,6 @@ export class UsersService {
   async verify(data: VerifyDto): Promise<UserExistanceStatus | null> {
     try {
       const { isVerified, email } = data;
-      console.log('DATA-->', data);
       const user = await this.prisma.user.update({
         where: {
           email: email,
@@ -81,4 +80,6 @@ export class UsersService {
       handlePrismaError(error);
     }
   }
+
+  async getUserProfile() {}
 }

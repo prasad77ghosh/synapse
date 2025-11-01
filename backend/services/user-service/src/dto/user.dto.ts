@@ -37,3 +37,5 @@ export class VerifyDto {
   @IsNotEmpty({ message: 'isVerified is required' })
   isVerified: boolean;
 }
+
+export class GetProfile {}

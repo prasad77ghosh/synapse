@@ -11,6 +11,8 @@ import { KafkaModule } from './kafka/kafka.module';
 import { RedisService } from './redis/redis.service';
 import { RedisModule } from './redis/redis.module';
 import { JwtModule } from '@nestjs/jwt';
+import { KongService } from './kong/kong.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -32,8 +34,9 @@ import { JwtModule } from '@nestjs/jwt';
     }),
     KafkaModule,
     RedisModule,
+    HttpModule,
   ],
   controllers: [AppController, AuthController],
-  providers: [AppService, AuthService, KafkaService, RedisService],
+  providers: [AppService, AuthService, KafkaService, RedisService, KongService],
 })
 export class AppModule {}
