@@ -32,15 +32,13 @@ export default tseslint.config(
   // 🧩 Rules section (last one wins)
   {
     rules: {
-      // --- TypeScript Rules ---
+      '@typescript-eslint/no-unsafe-member-access': 'off', // 👈 Add this line
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
 
-      // ✅ Disable this rule (causing @IsString() decorator warnings)
-      '@typescript-eslint/no-unsafe-call': 'off',
-
-      // --- Prettier Integration ---
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },

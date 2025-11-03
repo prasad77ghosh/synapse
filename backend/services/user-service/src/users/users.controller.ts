@@ -16,16 +16,12 @@ export class UsersController {
   @GrpcMethod('UserService', 'GetUserByMail')
   async getUserByMail(
     data: GetUserByMailDto,
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   ): Promise<UserExistanceStatus | null> {
     return await this.userService.getUserByMail(data);
   }
 
   @GrpcMethod('UserService', 'VerifyUser')
-  async verify(
-    data: VerifyDto,
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  ): Promise<UserExistanceStatus | null> {
+  async verify(data: VerifyDto): Promise<UserExistanceStatus | null> {
     return await this.userService.verify(data);
   }
 }

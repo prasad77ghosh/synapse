@@ -51,7 +51,7 @@ export class UsersService {
         },
       });
 
-      return user; // ✅ now valid, since return type allows null
+      return user;
     } catch (error) {
       handlePrismaError(error);
     }
