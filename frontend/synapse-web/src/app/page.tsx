@@ -5,8 +5,8 @@ import SignupForm from "./components/auth/Register";
 const Home = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <LoginForm />
-      {/* <SignupForm/> */}
+      {/* <LoginForm /> */}
+      <SignupForm/>
     </div>
   );
 };

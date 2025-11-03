@@ -24,15 +24,15 @@ export default function SignupForm() {
           <img src="./Logo.png" alt="logo" className="w-52 h-16" />
         </div>
         <CardTitle className="text-2xl">Create Account</CardTitle>
-        <CardDescription className="text-sm">
+        <CardDescription className="text-[12px]">
           Sign up to get started with us
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Name Field */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="name" className="text-[12px] ml-1">Full Name</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -46,7 +46,7 @@ export default function SignupForm() {
           </div>
 
           {/* Email Field */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="email" className="text-[12px] ml-1">Email Address</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -60,7 +60,7 @@ export default function SignupForm() {
           </div>
 
           {/* Password Field */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="password" className="text-[12px] ml-1">Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -87,7 +87,7 @@ export default function SignupForm() {
           </div>
 
           {/* Confirm Password */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="confirmPassword" className="text-[12px] ml-1">Confirm Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -115,7 +115,7 @@ export default function SignupForm() {
             </div>
           </div>
           {/* Submit Button */}
-          <Button type="button" className="w-full mt-6" size="lg">
+          <Button type="button" className="w-full mt-6 cursor-pointer" size="lg">
             Create Account
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
@@ -135,7 +135,7 @@ export default function SignupForm() {
 
         {/* Social Login Buttons */}
         <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" className="w-full">
+          <Button type="button" variant="outline" className="w-full cursor-pointer">
             <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -156,7 +156,7 @@ export default function SignupForm() {
             </svg>
             Google
           </Button>
-          <Button type="button" variant="outline" className="w-full">
+          <Button type="button" variant="outline" className="w-full cursor-pointer">
             <svg
               className="h-5 w-5 mr-2"
               fill="currentColor"
@@ -175,7 +175,7 @@ export default function SignupForm() {
             <Button
               type="button"
               variant="link"
-              className="px-0 h-auto text-sm font-medium"
+              className="px-0 h-auto text-sm font-medium cursor-pointer"
             >
               Sign in
             </Button>

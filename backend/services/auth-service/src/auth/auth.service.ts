@@ -121,9 +121,11 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    const { email } = loginDto;
     const data = {
       email: loginDto?.email,
     };
+
     const user = await firstValueFrom(this.usersService.GetUserByMail(data));
 
     if (!user.isVerified) {
@@ -170,16 +172,30 @@ export class AuthService {
     });
 
     // token logic
+    // get kong jwt credentials
+    const kongJwtArr = await this.kongService.getJwtCredentials(email);
+    const kongJwt = kongJwtArr[0];
     const deviceId = loginDto.deviceId;
-    const accessToken = this.jwtService.sign(
-      { sub: user.id, email: user.email, deviceId },
-      { expiresIn: this.ACCESS_TOKEN_EXPIRY },
-    );
 
-    const refreshToken = this.jwtService.sign(
-      { sub: user.id, deviceId },
-      { expiresIn: `${this.REFRESH_TOKEN_EXPIRY}s` },
-    );
+    const payload = {
+      iss: kongJwt.key,
+      sub: user.id,
+      email: user.email,
+      deviceId,
+    };
+
+    // Sign token using kong secret
+    const accessToken = this.jwtService.sign(payload, {
+      secret: kongJwt.secret,
+      algorithm: 'HS256',
+      expiresIn: this.ACCESS_TOKEN_EXPIRY,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: kongJwt.secret,
+      algorithm: 'HS256',
+      expiresIn: `${this.REFRESH_TOKEN_EXPIRY}s`,
+    });
 
     await this.storeRefreshToken({
       deviceId: deviceId,

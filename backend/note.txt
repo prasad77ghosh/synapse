@@ -15,3 +15,9 @@ npx prisma migrate dev --name <migration name>
 
 // relode conatiner
 docker exec -it kong kong reload
+
+
+
+// kong database migration 
+docker compose -f docker-compose.dev.yml run --rm kong kong migrations bootstrap
+docker compose -f docker-compose.dev.yml run --rm -v $(pwd)/api-gateway/config:/kong/declarative kong kong config db_import /kong/declarative/kong.yml

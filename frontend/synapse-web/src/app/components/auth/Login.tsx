@@ -22,8 +22,8 @@ function LoginForm() {
         <div className="w-full flex items-center justify-center">
           <img src="./Logo.png" alt="logo" className="w-60 h-20" />
         </div>
-        <CardTitle className="text-3xl">Welcome Back</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-2xl">Welcome Back</CardTitle>
+        <CardDescription className="text-[12px]">
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
@@ -32,7 +32,7 @@ function LoginForm() {
         <div className="space-y-4">
           {/* Email Field */}
           <div className="space-y-1">
-            <Label htmlFor="email" className="text-[12px]">
+            <Label htmlFor="email" className="text-[12px] ml-1">
               Email Address
             </Label>
             <div className="relative">
@@ -48,7 +48,7 @@ function LoginForm() {
 
           {/* Password Field */}
           <div className="space-y-1">
-            <Label htmlFor="password" className="text-[12px]">
+            <Label htmlFor="password" className="text-[12px] ml-1">
               Password
             </Label>
             <div className="relative">
