@@ -13,6 +13,7 @@ interface JwtPayload {
   email: string;
   deviceId: string;
 }
+
 interface JwtRequest extends Request {
   user?: JwtPayload;
 }
@@ -29,22 +30,29 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Authorization header missing');
     }
 
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      throw new UnauthorizedException('Authorization header malformed');
+    // Normalize and extract token safely
+    const token = this.extractToken(authHeader);
+    if (!token) {
+      throw new UnauthorizedException('Invalid Authorization header format');
     }
-    const token = parts[1];
+
     try {
-      const payload = this.jwtService.verify(token) as JwtPayload;
+      const payload = this.jwtService.decode<JwtPayload>(token);
       request.user = payload;
       return true;
-    } catch (error: unknown) {
-      // Narrow error type to avoid unsafe assignment
+    } catch (error) {
       if (error instanceof Error) {
-        throw new UnauthorizedException(error.message);
-      } else {
-        throw new UnauthorizedException('Invalid token');
+        throw new UnauthorizedException(
+          `Token verification failed: ${error.message}`,
+        );
       }
+      throw new UnauthorizedException('Invalid token');
     }
+  }
+
+  
+  private extractToken(authHeader: string): string | null {
+    const match = authHeader.trim().match(/^Bearer\s+(.+)$/i);
+    return match ? match[1].trim() : null;
   }
 }
