@@ -55,16 +55,14 @@ export class KongService {
 
   async registerFrontendClient(
     username: string,
-  ): Promise<{ consumer: Consumer; jwtCredential: JwtCredential }> {
-    const consumer = await this.createConsumer(username);
-    const jwtCredential = await this.createJwtCredential(username);
-
-    console.log({
-      consumer,
-      jwtCredential,
-    });
-
-    return { consumer, jwtCredential };
+  ): Promise<{ consumer: Consumer; jwtCredential: JwtCredential } | undefined> {
+    try {
+      const consumer = await this.createConsumer(username);
+      const jwtCredential = await this.createJwtCredential(username);
+      return { consumer, jwtCredential };
+    } catch (error) {
+      console.log('Error------>', error);
+    }
   }
 
   async getJwtCredentials(consumerUsername: string): Promise<JwtCredential[]> {

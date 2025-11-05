@@ -24,7 +24,7 @@ import { HttpModule } from '@nestjs/axios';
         options: {
           package: 'user',
           protoPath: join(__dirname, '../../../proto/user.proto'),
-          url: 'localhost:3002',
+          url: 'localhost:50052',
         },
       },
     ]),

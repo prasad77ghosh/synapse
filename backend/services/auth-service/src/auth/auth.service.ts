@@ -131,6 +131,7 @@ export class AuthService {
     if (!user.isVerified) {
       // send
       const token = generateVerificationToken();
+      await this.redisService.set(`email_verif_${user.email}`, token, 600);
       const registerEvent: UserRegisteredEvent = {
         id: user.id,
         name: user.name,
@@ -181,6 +182,7 @@ export class AuthService {
       iss: kongJwt.key,
       sub: user.id,
       email: user.email,
+      userId: user.id,
       deviceId,
     };
 
