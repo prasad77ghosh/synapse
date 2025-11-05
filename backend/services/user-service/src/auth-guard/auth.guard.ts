@@ -6,17 +6,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-
-interface JwtPayload {
-  iss: string;
-  sub: string;
-  email: string;
-  deviceId: string;
-}
-
-interface JwtRequest extends Request {
-  user?: JwtPayload;
-}
+import { JwtPayload } from 'src/interfaces/auth-payload.interface';
+import { JwtRequest } from 'src/interfaces/authenticated-request.interface';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -24,7 +15,7 @@ export class AuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<JwtRequest>();
-    const authHeader = request.headers['authorization'];
+    const authHeader = request?.headers['authorization'] as string;
 
     if (!authHeader) {
       throw new UnauthorizedException('Authorization header missing');
@@ -50,7 +41,6 @@ export class AuthGuard implements CanActivate {
     }
   }
 
-  
   private extractToken(authHeader: string): string | null {
     const match = authHeader.trim().match(/^Bearer\s+(.+)$/i);
     return match ? match[1].trim() : null;

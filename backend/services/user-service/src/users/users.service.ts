@@ -81,5 +81,25 @@ export class UsersService {
     }
   }
 
-  async getUserProfile() {}
+  async getUserProfile(id: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: id,
+        },
+        select: {
+          id: true,
+          email: true,
+          avatar: true,
+          dateOfBirth: true,
+          gender: true,
+          name: true,
+          phone: true,
+        },
+      });
+      return user;
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  }
 }

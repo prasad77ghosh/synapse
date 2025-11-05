@@ -1,9 +1,10 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Request, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import { CreateUserDto, GetUserByMailDto, VerifyDto } from 'src/dto/user.dto';
 import { CreateUserResponse, UserExistanceStatus } from 'src/proto/user.pb';
 import { AuthGuard } from 'src/auth-guard/auth.guard';
+import type { JwtRequest } from 'src/interfaces/authenticated-request.interface';
 // import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller('users')
@@ -28,7 +29,8 @@ export class UsersController {
 
   @Get('profile')
   @UseGuards(AuthGuard)
-  getProfile() {
-    return { message: 'This is a protected route' };
+  async getProfile(@Request() req: JwtRequest) {
+    const { userId } = req.user;
+    return await this.userService.getUserProfile(userId);
   }
 }
