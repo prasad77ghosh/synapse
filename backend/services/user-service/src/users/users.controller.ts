@@ -5,7 +5,6 @@ import { CreateUserDto, GetUserByMailDto, VerifyDto } from 'src/dto/user.dto';
 import { CreateUserResponse, UserExistanceStatus } from 'src/proto/user.pb';
 import { AuthGuard } from 'src/auth-guard/auth.guard';
 import type { JwtRequest } from 'src/interfaces/authenticated-request.interface';
-// import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller('users')
 export class UsersController {

@@ -35,7 +35,6 @@ export class UsersService {
 
   async getUserByMail(
     data: GetUserByMailDto,
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   ): Promise<UserExistanceStatus | null> {
     try {
       const user = await this.prisma.user.findUnique({
