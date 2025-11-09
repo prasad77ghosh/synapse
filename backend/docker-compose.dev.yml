@@ -220,6 +220,9 @@ services:
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic user.registered --partitions 3 --replication-factor 1 --config retention.ms=604800000 --config compression.type=gzip || true;
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic user.email.verified --partitions 3 --replication-factor 1 --config retention.ms=604800000 || true;
 
+        # Group And WorkSpace Events
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic workspace.events --partitions 3 --replication-factor 1 --config retention.ms=259200000 || true;
+
         # Notification Events
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic notification.email.send --partitions 5 --replication-factor 1 --config retention.ms=259200000 || true;
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic notification.sms.send --partitions 3 --replication-factor 1 --config retention.ms=259200000 || true;

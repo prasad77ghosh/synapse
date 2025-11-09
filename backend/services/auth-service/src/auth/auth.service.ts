@@ -62,6 +62,8 @@ export class AuthService {
   onModuleInit() {
     this.usersService = this.client.getService<UsersService>('UserService');
   }
+
+  //========================Register=============================//
   async register(registerDto: RegisterDto) {
     const { email } = registerDto;
     //hash password logic
@@ -101,6 +103,7 @@ export class AuthService {
     };
   }
 
+  //========================Verify=============================//
   async verify(verifyDto: VerifyDto): Promise<string> {
     const { email } = verifyDto;
     const storedToken = await this.redisService.get(
@@ -120,6 +123,7 @@ export class AuthService {
     return 'Email verified successfully';
   }
 
+  //========================Login=============================//
   async login(loginDto: LoginDto) {
     const { email } = loginDto;
     const data = {
@@ -208,6 +212,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  //========================Token Rotation=============================//
   async tokenRotation(rotationDto: TokenRotationDto) {
     const { deviceId, token, userId } = rotationDto;
     const tokenKey = this.getRefreshTokenKey(userId, deviceId);
@@ -224,6 +229,7 @@ export class AuthService {
     return { accessToken };
   }
 
+  //========================Logout=============================//
   async logout(logoutDto: LogoutDto) {
     const { deviceId, userId } = logoutDto;
     const deviceKey = this.getDeviceKey(userId);

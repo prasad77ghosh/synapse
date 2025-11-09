@@ -10,3 +10,5 @@ export class CreateWorkspaceDto {
   @IsString()
   description?: string;
 }
+
+export class GetAllWorkSpacesDto {}

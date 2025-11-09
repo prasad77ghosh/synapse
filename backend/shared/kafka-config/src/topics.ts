@@ -1,10 +1,9 @@
 export const KAFKA_TOPICS = {
+  //===============USER REGISTER TPOC ==================??
   USER_REGISTERED: "user.registered",
-  USER_EMAIL_VERIFIED: "user.email.verified",
-  USER_PHONE_VERIFIED: "user.phone.verified",
 
-  SEND_EMAIL: "notification.email.send",
-  SEND_SMS: "notification.sms.send",
+  //=============GOURP AND WORK SPACE TOPICS===============//
+  WORKSPACE_EVENT: "workspace.events",
 } as const;
 
 export const TOPIC_CONFIGS = {
@@ -12,15 +11,5 @@ export const TOPIC_CONFIGS = {
     partitions: 3,
     replicationFactor: 2,
     retentionMs: 604800000,
-  },
-  [KAFKA_TOPICS.SEND_EMAIL]: {
-    partitions: 3,
-    replicationFactor: 2,
-    retentionMs: 259200000,
-  },
-  [KAFKA_TOPICS.SEND_SMS]: {
-    partitions: 3,
-    replicationFactor: 2,
-    retentionMs: 259200000,
   },
 };
