@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  groups  Group[]
+  members WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, userId])
+}
+
+model Group {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  isPrivate    Boolean  @default(false)
+  workspaceId  String
+  createdById  String
+  messagesRoom String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id])
+  members   GroupMember[]
+}
+
+model GroupMember {
+  id       String    @id @default(uuid())
+  groupId  String
+  userId   String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([groupId, userId])
+}

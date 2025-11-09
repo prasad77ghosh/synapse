@@ -23,6 +23,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # 🆕 NEW: Group Database Instance
+  postgres_group:
+    image: postgres:16-alpine
+    container_name: postgres_group
+    environment:
+      POSTGRES_USER: group_user
+      POSTGRES_PASSWORD: group_password
+      POSTGRES_DB: group_db
+    ports:
+      - "5433:5432" # different port from main postgres
+    volumes:
+      - postgres-group-data:/var/lib/postgresql/data
+    networks:
+      - synapse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U group_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   mongodb:
     image: mongo:7-jammy
     container_name: mongodb
@@ -61,7 +81,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      
+
   redisinsight:
     image: redis/redisinsight:latest
     container_name: redisinsight
@@ -233,6 +253,7 @@ networks:
 
 volumes:
   postgres-data:
+  postgres-group-data:
   mongodb-data:
   redis-data:
   zookeeper-data:
