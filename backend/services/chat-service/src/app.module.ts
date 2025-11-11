@@ -3,6 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { MessageService } from './message/message.service';
+import { MessageController } from './message/message.controller';
 
 @Module({
   imports: [
@@ -11,7 +13,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     }),
     MongooseModule.forRoot(process.env.MONGO_URI!),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, MessageController],
+  providers: [AppService, MessageService],
 })
 export class AppModule {}
