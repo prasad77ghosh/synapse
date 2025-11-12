@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MessageService } from './message/message.service';
 import { MessageController } from './message/message.controller';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { MessageController } from './message/message.controller';
       isGlobal: true,
     }),
     MongooseModule.forRoot(process.env.MONGO_URI!),
+    ChatModule,
   ],
   controllers: [AppController, MessageController],
   providers: [AppService, MessageService],
